@@ -1,0 +1,22 @@
+service: serverless-sagemaker-layer
+
+plugins:
+  - serverless-python-requirements
+custom:
+  region: ap-northeast-1
+  pythonRequirements:
+    usePipenv: true
+    dockerizePip: true
+    layer: true
+    noDeploy: [pytest, jmespath, docutils, pip, python-dateutil, setuptools, s3transfer, six]
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: ${self:custom.region}
+
+resources:
+  Outputs:
+    ServerlessSagemakerLayerExport:
+      Value:
+        Ref: PythonRequirementsLambdaLayer

@@ -1,0 +1,69 @@
+service: sagemaker-serverless-example
+
+custom:
+  default_stage: dev
+  region: ap-northeast-1
+  stage: ${opt:stage, self:custom.default_stage}
+  s3:
+    bucket: ${self:service}-${self:custom.stage}
+  sagemaker:
+    resource: arn:aws:sagemaker:${self:custom.region}:*:*
+    endpoint_name: ${self:service}-endpoint-${self:custom.stage}
+  logs:
+    resource: arn:aws:logs:${self:custom.region}:*:log-group:/aws/sagemaker/*
+  layer:
+    service: serverless-sagemaker-layer
+    export: ServerlessSagemakerLayerExport
+    layer: ${cf:${self:custom.layer.service}-${self:custom.stage}.${self:custom.layer.export}}
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  environment:
+    S3_BUCKET: ${self:custom.s3.bucket}
+    SM_ROLE_ARN: !GetAtt SageMakerServiceRole.Arn
+    SM_ENDPOINT_NAME: ${self:custom.sagemaker.endpoint_name}
+  iamRoleStatements:
+    - Effect: Allow
+      Action: sagemaker:*
+      Resource: ${self:custom.sagemaker.resource}
+
+functions:
+  predict:
+    handler: predict.predict
+    layers:
+      - ${self:custom.layer.layer}
+    events:
+      - http:
+          path: invocations
+          method: post
+  see_env:
+    handler: env.see_environment
+
+resources:
+  Resources:
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3.bucket}
+        AccessControl: Private
+    SageMakerServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - sagemaker.amazonaws.com
+            Action:
+            - sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+
+package:
+  exclude:
+    - .gitignore
