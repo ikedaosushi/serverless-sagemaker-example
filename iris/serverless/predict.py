@@ -8,7 +8,7 @@ SM_ENDPOINT_NAME =  os.environ.get("SM_ENDPOINT_NAME")
 def predict(event, contect):
     data = json.loads(event["body"])['data']
     predictor = SKLearnPredictor(endpoint_name=SM_ENDPOINT_NAME)
-    y = predictor.predict([data]).tolist()
+    y = predictor.predict([data]).tolist()[0]
     body = {
         "y": y
     }
