@@ -3,20 +3,29 @@ import json
 import argparse
 from pathlib import Path
 
-from dotenv import load_dotenv
+import boto3
 import sagemaker
 from sagemaker.sklearn.estimator import SKLearn
 
-load_dotenv(".env")
+# CloudFormationから環境変数を読み出し
+## CFのStack設定
+SERVICE_NAME = "sagemaker-serverless-example"
+ENV = os.environ.get("ENV", "dev")
+STACK_NAME = f"{SERVICE_NAME}-{ENV}"
 
-SM_ROLE_ARN = os.environ.get("SM_ROLE_ARN")
-S3_BUCKET =  os.environ.get("S3_BUCKET")
-SM_ENDPOINT_NAME = os.environ.get("SM_ENDPOINT_NAME")
+## Outputsを{Key: Valueの形で読み出し}
+stack = boto3.resource('cloudformation').Stack(STACK_NAME)
+outputs = {o["OutputKey"]: o["OutputValue"] for o in stack.outputs}
 
-TRAIN_KEY = "train_data"
-OUTPUT_KEY = "artifacts"
-INPUT_PATH = f"s3://{S3_BUCKET}/{TRAIN_KEY}"
-OUTPUT_PATH = f's3://{S3_BUCKET}/{OUTPUT_KEY}'
+S3_BUCKET = outputs["S3Bucket"]
+S3_TRAIN_BASE_KEY = outputs["S3TrainBaseKey"]
+S3_MODEL_BASE_KEY = outputs["S3ModelBaseKey"]
+
+SM_ROLE_ARN = outputs["SmRoleArn"]
+SM_ENDPOINT_NAME = outputs["SmEndpointName"]
+
+INPUT_PATH = f"s3://{S3_BUCKET}/{S3_TRAIN_BASE_KEY}"
+OUTPUT_PATH = f's3://{S3_BUCKET}/{S3_MODEL_BASE_KEY}'
 
 
 def main(update_endpoint=False):

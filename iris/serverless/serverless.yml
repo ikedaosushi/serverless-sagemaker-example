@@ -6,6 +6,9 @@ custom:
   stage: ${opt:stage, self:custom.default_stage}
   s3:
     bucket: ${self:service}-${self:custom.stage}
+    train_base_key: train
+    train_file_name: train.csv
+    model_base_key: artifacts
   sagemaker:
     resource: arn:aws:sagemaker:${self:custom.region}:*:*
     endpoint_name: ${self:service}-endpoint-${self:custom.stage}
@@ -39,8 +42,6 @@ functions:
       - http:
           path: invocations
           method: post
-  see_env:
-    handler: env.see_environment
 
 resources:
   Resources:
@@ -63,6 +64,19 @@ resources:
             - sts:AssumeRole
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+  Outputs:
+    S3Bucket:
+      Value: ${self:custom.s3.bucket}
+    S3TrainBaseKey:
+      Value: ${self:custom.s3.train_base_key}
+    S3TrainFileName:
+      Value: ${self:custom.s3.train_file_name}
+    S3ModelBaseKey:
+      Value: ${self:custom.s3.model_base_key}
+    SmRoleArn:
+      Value: !GetAtt SageMakerServiceRole.Arn
+    SmEndpointName:
+      Value: ${self:custom.sagemaker.endpoint_name}
 
 package:
   exclude:
