@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+pyyaml = ">=4.2b1"
 "boto3" = "*"
 sagemaker = "*"
-pyyaml = "*"
 
 [dev-packages]
 
